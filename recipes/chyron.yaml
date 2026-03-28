@@ -1,0 +1,29 @@
+name: Chyron
+id: chyron
+description: TV news lower-third — semi-transparent overlay bar with text
+best_for: News-style updates, operational status, professional look
+
+animation:
+  type: chyron
+  entry: wipe-right       # bar wipes in from left
+  wipe_duration: 0.3
+  text_delay: 0.2         # text appears after bar
+  text_entry: fade        # fade | typewriter | instant
+  hold: 5.0
+  exit: wipe-left
+  loop: true
+  loop_gap: 1.0
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+
+color:
+  mode: severity
+  bar_opacity: 0.3    # background bar opacity
+  text_opacity: 1.0
+  glow: false
+
+example:
+  banner: "BREAKING ★ Athena reports all systems nominal ★ 14:35 UTC"

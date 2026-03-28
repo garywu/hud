@@ -1,0 +1,18 @@
+{
+  "id": "system-monitor",
+  "name": "System Monitor",
+  "description": "CPU/memory sparkline in the notch",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "text",
+    "presentation": "static",
+    "size": "small",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 5
+  },
+  "config": {}
+}

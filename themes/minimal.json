@@ -1,0 +1,16 @@
+{
+  "name": "minimal",
+  "colors": {
+    "info": "#34D399",
+    "warning": "#FBBF24",
+    "error": "#F87171",
+    "background": "#000000",
+    "foreground": "#FFFFFF"
+  },
+  "typography": {
+    "font": "monospaced",
+    "size": 12,
+    "weight": "heavy"
+  },
+  "bannerStyle": "scroll"
+}

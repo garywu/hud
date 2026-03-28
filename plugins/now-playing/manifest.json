@@ -1,0 +1,17 @@
+{
+  "id": "now-playing",
+  "name": "Now Playing",
+  "description": "Currently playing music",
+  "version": "1.0",
+  "display": {
+    "renderer": "text",
+    "presentation": "scroll",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 5
+  },
+  "command": "bash ~/.atlas/plugins/now-playing/run.sh"
+}

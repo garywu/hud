@@ -1,0 +1,24 @@
+name: Scroll
+id: scroll
+description: Classic LED ticker — text scrolls continuously left
+best_for: Long messages, continuous feeds, ambient updates
+
+animation:
+  type: continuous-scroll
+  direction: right-to-left
+  speed: 45        # points per second (normal)
+  speed_urgent: 70 # points per second (red)
+  loop: true
+  gap: 0.5         # gap between loops as fraction of container width
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+
+color:
+  mode: severity   # uses severity color (green/yellow/red)
+  glow: false
+
+example:
+  banner: "⚠️ TRAFFIC SPIKE ★ scalable-media 3x ★ GatherFeed queue: 847 ★ investigating"

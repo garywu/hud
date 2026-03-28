@@ -1,0 +1,17 @@
+{
+  "id": "uptime",
+  "name": "System Uptime",
+  "description": "System uptime, load average, and memory usage",
+  "version": "1.0",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 60
+  },
+  "command": "bash ~/.atlas/plugins/uptime/run.sh"
+}

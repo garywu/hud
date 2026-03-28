@@ -1,0 +1,25 @@
+name: Morse
+id: morse
+description: Military ops — background flashes morse code for first letter, then text appears
+best_for: Military theme, emergency alerts, subtle urgency
+
+animation:
+  type: morse-then-text
+  morse_unit: 0.1          # dot duration in seconds
+  morse_first_word: true   # morse the first word only
+  text_entry: instant      # text appears after morse
+  hold: 4.0
+  loop: true
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+  text_transform: uppercase
+
+color:
+  mode: severity
+  morse_flash_opacity: 0.8
+
+example:
+  banner: "ALERT ★ PERIMETER BREACH ★ SECTOR 4 ★ RESPONDING"

@@ -1,0 +1,20 @@
+{
+  "id": "clock",
+  "name": "Live Clock",
+  "description": "Current time on LCD display in the notch",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "continuous",
+    "interval": 1
+  },
+  "config": {
+    "format": "24h"
+  }
+}

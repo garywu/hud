@@ -1,0 +1,20 @@
+{
+  "name": "cyberpunk",
+  "colors": {
+    "info": "#00FFD5",
+    "warning": "#F0FF00",
+    "error": "#FF00AA",
+    "background": "#0D0D0D",
+    "foreground": "#00FFD5"
+  },
+  "typography": {
+    "font": "monospaced",
+    "size": 12,
+    "weight": "heavy"
+  },
+  "animations": {
+    "expand": "spring",
+    "bannerSpeed": 60
+  },
+  "bannerStyle": "scroll"
+}

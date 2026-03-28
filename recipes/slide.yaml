@@ -1,0 +1,28 @@
+name: Slide
+id: slide
+description: Text slides in with spring bounce, pauses, slides out — repeats
+best_for: Sequential updates, deploy notifications, completed tasks
+
+animation:
+  type: slide-pause-slide
+  direction: right-to-left
+  entry: spring        # spring | ease | linear
+  spring_response: 0.5
+  spring_damping: 0.7
+  hold: 3.5            # seconds to hold in center
+  exit: ease-in
+  exit_duration: 0.4
+  loop: true
+  loop_gap: 1.0        # seconds between loops
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+
+color:
+  mode: severity
+  glow: false
+
+example:
+  banner: "🚀 DEPLOYED ★ v2.4.1 ★ production ★ all tests passing"

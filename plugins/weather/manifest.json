@@ -1,0 +1,17 @@
+{
+  "id": "weather",
+  "name": "Weather",
+  "description": "Current temperature and conditions",
+  "version": "1.0",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "large",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 1800
+  },
+  "command": "bash ~/.atlas/plugins/weather/run.sh"
+}

@@ -1,0 +1,27 @@
+name: Matrix
+id: matrix
+description: Characters rain/glitch into position — digital rain aesthetic
+best_for: Cyberpunk theme, system diagnostics, hacker aesthetic
+
+animation:
+  type: glitch-reveal
+  glitch_duration: 0.2     # seconds of random characters before settling
+  glitch_charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZアイウエオカキクケコ0123456789"
+  cascade_delay: 0.02      # very fast cascade
+  settle_order: random     # random | left-to-right | right-to-left
+  hold: 3.0
+  loop: true
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+
+color:
+  mode: fixed
+  primary: "#00FF41"       # classic matrix green
+  glow: true
+  glow_radius: 2
+
+example:
+  banner: "SYSTEM BREACH DETECTED ★ TRACING ORIGIN ★ NODE 7F3A"

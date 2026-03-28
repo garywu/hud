@@ -1,0 +1,26 @@
+name: Typewriter
+id: typewriter
+description: Characters appear one at a time with blinking cursor
+best_for: Important first-time messages, dramatic reveals, status updates
+
+animation:
+  type: sequential-reveal
+  char_delay: 0.05   # seconds per character
+  space_delay: 0.12  # longer pause on spaces/punctuation
+  cursor: true
+  cursor_char: "▌"
+  cursor_blink: 0.4  # blink interval
+  hold: 3.0          # seconds to hold after complete
+  loop: true
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+
+color:
+  mode: severity
+  glow: false
+
+example:
+  banner: "DEPLOYING ★ api-server v2.4.1 ★ production ★ 12 files"

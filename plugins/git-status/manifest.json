@@ -1,0 +1,17 @@
+{
+  "id": "git-status",
+  "name": "Git Status",
+  "description": "Current branch and uncommitted changes",
+  "version": "1.0",
+  "display": {
+    "renderer": "text",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 30
+  },
+  "command": "bash ~/.atlas/plugins/git-status/run.sh"
+}

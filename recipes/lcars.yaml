@@ -1,0 +1,32 @@
+name: LCARS
+id: lcars
+description: Star Trek LCARS display — wipe reveal with colored leading edge
+best_for: Star Trek theme, sci-fi aesthetic, system status
+
+animation:
+  type: wipe-reveal
+  direction: left-to-right
+  wipe_duration: 0.6
+  leading_edge_width: 4     # pixels
+  leading_edge_color: severity
+  text_entry: behind-wipe   # text revealed as wipe passes
+  hold: 4.0
+  loop: true
+
+typography:
+  font: monospaced
+  size: 12
+  weight: heavy
+  letter_spacing: 1.5       # wider spacing for LCARS feel
+  text_transform: uppercase
+
+color:
+  mode: lcars
+  info: "#9999FF"      # periwinkle
+  success: "#99CC99"   # sage green
+  warning: "#FF9900"   # orange
+  error: "#CC0000"     # deep red
+  critical: "#FF0000"  # bright red
+
+example:
+  banner: "YELLOW ALERT ★ ANOMALOUS READINGS ★ SECTOR 7 ★ SCANNING"

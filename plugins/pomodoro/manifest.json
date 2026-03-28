@@ -1,0 +1,21 @@
+{
+  "id": "pomodoro",
+  "name": "Pomodoro Timer",
+  "description": "25-minute focus countdown in the notch",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "active"
+  },
+  "schedule": {
+    "type": "interval",
+    "interval": 1
+  },
+  "config": {
+    "work_minutes": "25",
+    "break_minutes": "5"
+  }
+}
