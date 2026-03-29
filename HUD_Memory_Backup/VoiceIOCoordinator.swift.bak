@@ -1,0 +1,270 @@
+import AVFoundation
+import os
+import Observation
+
+/// Coordinates the entire voice I/O lifecycle.
+/// Orchestrates:
+/// - Audio capture (via AudioIOManager)
+/// - Speech-to-text transcription (via WhisperKitEngine)
+/// - State machine transitions
+/// - UI updates (via @Observable)
+///
+/// Integration points:
+/// - Listens for voice activation (hotkey, button click)
+/// - Posts state changes to UI layer
+/// - Logs voice interactions to ~/.atlas/voice-history.json
+@Observable
+actor VoiceIOCoordinator {
+    // MARK: - Dependencies
+    private let audioIOManager = AudioIOManager()
+    private let whisperEngine = WhisperKitEngine()
+    private let logger = Logger(subsystem: "com.atlas.hud.voice", category: "VoiceIOCoordinator")
+
+    // MARK: - State Management
+    private var voiceState: JaneAnimationState = .idle
+    private var isListening = false
+    private var transcriptionText: String = ""
+    private var lastError: String?
+
+    // MARK: - Configuration
+    private let captureTimeoutSeconds: TimeInterval = 30.0  // Max record duration
+    private let captureMinimumSeconds: TimeInterval = 0.5   // Min record duration
+
+    // MARK: - Initialization
+
+    init() {
+        logger.info("VoiceIOCoordinator initialized")
+    }
+
+    // MARK: - Lifecycle Setup
+
+    /// Initializes the voice system (called once at app startup).
+    /// - Loads microphone permissions
+    /// - Sets up audio session
+    /// - Loads WhisperKit model
+    func initialize() async {
+        logger.info("Initializing voice system...")
+
+        do {
+            // Check microphone permission
+            let hasMicPermission = await audioIOManager.requestMicrophonePermission()
+            guard hasMicPermission else {
+                logger.error("Microphone permission denied")
+                updateState(.error(message: "Microphone permission denied"))
+                return
+            }
+
+            // Setup audio session
+            try await audioIOManager.setupAudioSession()
+            logger.info("Audio session setup complete")
+
+            // Initialize audio engine
+            try await audioIOManager.initialize()
+            logger.info("Audio engine initialized")
+
+            // Load WhisperKit model (non-blocking, happens in background)
+            Task {
+                do {
+                    try await self.whisperEngine.loadModel()
+                    self.logger.info("WhisperKit model loaded successfully")
+                } catch {
+                    self.logger.error("Failed to load WhisperKit model: \(error.localizedDescription)")
+                    // Don't fail initialization; voice will gracefully degrade
+                }
+            }
+
+            logger.info("Voice system initialization complete")
+        } catch {
+            logger.error("Voice system initialization failed: \(error.localizedDescription)")
+            updateState(.error(message: "Voice initialization failed"))
+        }
+    }
+
+    // MARK: - Voice Activation
+
+    /// Starts voice recording when user activates the mic (button click, hotkey, etc.)
+    /// - Records audio for up to 30 seconds or until stopListening() is called
+    /// - Updates UI state to LISTENING
+    /// - Shows visual feedback (waveform, input level)
+    func startListening() async {
+        guard !isListening else {
+            logger.warning("Already listening")
+            return
+        }
+
+        logger.info("Starting voice recording")
+        isListening = true
+        transcriptionText = ""
+        lastError = nil
+
+        updateState(.listening(voiceAmplitude: 0.5))
+
+        do {
+            try await audioIOManager.startCapture()
+            logger.info("Audio capture started")
+        } catch {
+            logger.error("Failed to start audio capture: \(error.localizedDescription)")
+            updateState(.error(message: "Microphone error: \(error.localizedDescription)"))
+            isListening = false
+        }
+    }
+
+    /// Stops voice recording and initiates transcription.
+    /// - Stops audio capture
+    /// - Updates UI state to THINKING (transcribing)
+    /// - Calls WhisperKit to transcribe captured audio
+    /// - Updates UI with transcribed text
+    func stopListening() async {
+        guard isListening else {
+            logger.warning("Not currently listening")
+            return
+        }
+
+        logger.info("Stopping voice recording")
+        isListening = false
+
+        // Update state before transcription
+        updateState(.thinking(progress: 0.1))
+
+        do {
+            // Stop capturing and get the audio buffer
+            let audioBuffer = try await audioIOManager.stopCapture()
+            guard let audioBuffer = audioBuffer else {
+                logger.warning("No audio captured")
+                updateState(.error(message: "No audio captured"))
+                return
+            }
+
+            logger.info("Audio capture stopped; buffer has \(audioBuffer.frameLength) frames")
+
+            // Validate buffer before transcription
+            guard whisperEngine.isValidBuffer(audioBuffer) else {
+                logger.error("Audio buffer format is invalid for transcription")
+                updateState(.error(message: "Invalid audio format"))
+                return
+            }
+
+            // Transcribe
+            updateState(.thinking(progress: 0.5))
+            let startTime = Date()
+
+            let text = try await whisperEngine.transcribe(audioBuffer: audioBuffer)
+
+            let elapsed = Date().timeIntervalSince(startTime)
+            logger.info(
+                """
+                Transcription successful in \(String(format: "%.2f", elapsed))s
+                Text: "\(text)"
+                """
+            )
+
+            transcriptionText = text
+
+            // Log the interaction
+            logVoiceInteraction(transcription: text, duration_ms: Int(elapsed * 1000))
+
+            updateState(.thinking(progress: 1.0))
+        } catch {
+            logger.error("Transcription failed: \(error.localizedDescription)")
+            updateState(.error(message: "Transcription failed: \(error.localizedDescription)"))
+        }
+    }
+
+    // MARK: - State Management
+
+    /// Updates the voice state and notifies observers.
+    /// Called internally by coordinator when state changes.
+    private func updateState(_ newState: JaneAnimationState) {
+        voiceState = newState
+        logger.info("Voice state changed to: \(newState.name)")
+
+        // Notify UI subscribers (NotchWindow, StatusBarRouter, etc.)
+        // This happens automatically via @Observable
+    }
+
+    // MARK: - Query Methods
+
+    /// Current voice state (for UI binding).
+    var currentState: JaneAnimationState {
+        voiceState
+    }
+
+    /// Whether microphone is currently active.
+    var isActive: Bool {
+        isListening
+    }
+
+    /// Last transcribed text (for UI display).
+    var transcribedText: String {
+        transcriptionText
+    }
+
+    /// Last error message (if any).
+    var errorMessage: String? {
+        lastError
+    }
+
+    /// Input level for waveform animation (0.0-1.0).
+    var inputLevel: Float {
+        Task {
+            return await audioIOManager.getInputLevel()
+        }
+        return 0.0
+    }
+
+    // MARK: - Logging
+
+    /// Logs voice interaction to ~/.atlas/voice-history.json.
+    /// Format: JSON array with up to 100 recent interactions.
+    /// Each entry includes transcription, duration, and timestamp.
+    private func logVoiceInteraction(
+        transcription: String,
+        duration_ms: Int
+    ) {
+        let entry: [String: Any] = [
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "transcription": transcription,
+            "duration_ms": duration_ms,
+            "model": "whisper-base"
+        ]
+
+        let historyPath = NSString("~/.atlas/voice-history.json").expandingTildeInPath
+        let fileManager = FileManager.default
+
+        // Read existing history
+        var history: [[String: Any]] = []
+        if fileManager.fileExists(atPath: historyPath),
+           let data = fileManager.contents(atPath: historyPath),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+            history = json
+        }
+
+        // Add new entry
+        history.append(entry)
+
+        // Keep only last 100 entries
+        if history.count > 100 {
+            history = Array(history.dropFirst(history.count - 100))
+        }
+
+        // Write back
+        if let jsonData = try? JSONSerialization.data(withJSONObject: history, options: [.prettyPrinted]) {
+            fileManager.createFile(atPath: historyPath, contents: jsonData)
+            logger.info("Voice interaction logged")
+        }
+    }
+
+    // MARK: - Cleanup
+
+    /// Cleans up voice resources when app is shutting down.
+    func shutdown() async {
+        logger.info("Voice system shutting down")
+
+        do {
+            try await audioIOManager.stopCapture()
+            await audioIOManager.stopPlayback()
+        } catch {
+            logger.error("Error during shutdown: \(error.localizedDescription)")
+        }
+    }
+}

@@ -1,0 +1,279 @@
+# HUD — Brand Card (CMO-owned)
+# Location: hud/hq/brand.yaml
+# Status: Ready for file creation
+# Owner: Hermes (CMO)
+
+name: "HUD"
+positioning: "The dashboard for always-listening AI — bring ambient intelligence to your Mac's notch"
+
+# ============================================================================
+# VOICE & TONE
+# ============================================================================
+voice:
+  tone: "technical, delightful, minimalist"
+  traits:
+    - clear
+    - practical
+    - honest (show what works and what doesn't)
+    - enthusiastic about community contributions
+
+  forbidden:
+    - synergy
+    - leverage
+    - disrupt
+    - "AI for everyone" (we target developers + power users, not everyone)
+    - vaporware (only announce when shipping)
+    - buzzwords without substance
+
+# ============================================================================
+# AUDIENCE & ICP
+# ============================================================================
+audience:
+  icp: "Developer + power user (1-5 person teams) running local AI companions, system dashboards, or creative tools on macOS"
+
+  segments:
+    - name: "AI Companion Builders"
+      size: "2,000–5,000 developers"
+      needs: ["display engine for local AI", "low-latency notification delivery", "plugin extensibility"]
+      channels: ["GitHub", "Twitter", "Product Hunt", "ML developer communities"]
+
+    - name: "System Status Enthusiasts"
+      size: "5,000–10,000 power users"
+      needs: ["real-time system metrics", "customizable widgets", "battery-conscious design"]
+      channels: ["Twitter", "Reddit (r/macapps)", "indie-makers communities"]
+
+    - name: "Creative Tool Builders"
+      size: "1,000–2,000 indie makers"
+      needs: ["expressive 50×60pt canvas", "animation-capable renderer", "plugin distribution"]
+      channels: ["Twitter", "GitHub", "Indie Hackers"]
+
+  pain_points:
+    - "Existing notch displays are limited (Apple Stocks app, simple widgets)"
+    - "No unified API for custom notch apps"
+    - "Local AI companions need always-visible status (not buried in menu bar)"
+    - "System dashboards steal focus with notifications"
+    - "Creating custom UI for 50×60pt is technically complex"
+
+# ============================================================================
+# KEYWORDS & SEO
+# ============================================================================
+keywords:
+  primary:
+    - "macOS notch display"
+    - "ambient AI interface"
+    - "local AI companion"
+    - "system status dashboard"
+    - "custom notch app"
+
+  secondary:
+    - "macOS 14 dynamic island"
+    - "AI notification manager"
+    - "open-source notch platform"
+    - "developer tools for Apple notch"
+    - "always-on AI assistant"
+
+  long_tail:
+    - "build custom notch app for Jane AI"
+    - "macOS notch SDK for developers"
+    - "open-source system status notch"
+    - "how to use macOS notch for ambient UI"
+
+# ============================================================================
+# CHANNELS & DISTRIBUTION
+# ============================================================================
+channels:
+  - name: "Twitter (@notchsh)"
+    platform: "twitter"
+    handle: "@notchsh"
+    primary_content: ["release announcements", "plugin spotlights", "behind-the-scenes", "community wins"]
+    cadence: "2–3 posts per week"
+    owner: "Hermes (CMO) → social-good"
+
+  - name: "GitHub"
+    platform: "github"
+    handle: "garywu/hud"
+    primary_content: ["issues & bug reports", "feature discussions", "contribution guides", "plugin submissions"]
+    cadence: "daily triage, responses within 24h"
+    owner: "Hermes (CMO) + Hephaestus (CTO)"
+
+  - name: "GitHub Discussions"
+    platform: "github"
+    handle: "garywu/hud/discussions"
+    primary_content: ["Q&A", "plugin development help", "feature ideas", "show-and-tell"]
+    cadence: "2–4 responses per day"
+    owner: "Hermes (CMO)"
+
+  - name: "Developer Communities (Twitter, Indie Hackers, Product Hunt)"
+    platform: "multi"
+    primary_content: ["participation in threads", "plugin spotlights", "launch announcements"]
+    cadence: "as-needed"
+    owner: "Hermes (CMO)"
+
+  - name: "Documentation (docs/)"
+    platform: "web"
+    handle: "github.com/garywu/hud/docs"
+    primary_content: ["API reference", "plugin development guide", "architecture docs", "examples"]
+    cadence: "updated with each release"
+    owner: "Hephaestus (CTO)"
+
+# ============================================================================
+# CONTENT CALENDAR & THEMES
+# ============================================================================
+content_calendar:
+  q2_2026:
+    - theme: "public-launch"
+      month: "April"
+      campaigns:
+        - "v1.0 release announcement (1 post)"
+        - "Feature explainers: LCD mode, scanner mode, text mode (3 posts)"
+        - "Plugin ecosystem introduction (1 post)"
+
+    - theme: "community-building"
+      month: "May"
+      campaigns:
+        - "Plugin spotlight series (4 posts, 1 per week)"
+        - "Community contributions (2 posts)"
+        - "Jane integration updates (2 posts)"
+
+    - theme: "ecosystem-growth"
+      month: "June"
+      campaigns:
+        - "Plugin spotlight series (4 posts)"
+        - "Developer tooling announcements (2 posts)"
+        - "H1 retrospective (1 post)"
+
+# ============================================================================
+# MONETIZATION & BUSINESS MODEL
+# ============================================================================
+monetization:
+  model: "freemium"
+  details:
+    - "HUD core: free, open-source (MIT or Apache 2.0)"
+    - "Plugins: free bundled (12 included), ecosystem open for 3rd-party"
+    - "Future revenue: premium plugin distribution (Q3 2026), consulting for custom integrations"
+    - "No paywalls or feature gating (opposite of SaaS Printer)"
+
+# ============================================================================
+# BRAND VALUES
+# ============================================================================
+values:
+  - name: "Open Source"
+    description: "Community-driven development, transparent roadmap, contributor-friendly"
+
+  - name: "Minimalist Design"
+    description: "Respect the notch. Don't clutter. 50×60pt is small; every pixel matters"
+
+  - name: "Local First"
+    description: "Privacy by default. HUD runs locally on your machine. No tracking, no telemetry (only Sentry for crashes)"
+
+  - name: "Developer-Friendly"
+    description: "Great docs, clear APIs, easy plugin development. Makers should feel welcome"
+
+  - name: "Practical"
+    description: "Ship working features, not roadmap dreams. Transparency about what works and what doesn't"
+
+# ============================================================================
+# COMPETITIVE POSITIONING
+# ============================================================================
+competitors:
+  - name: "Apple Stock Ticker Widget"
+    our_advantage: "Full-featured rendering engine vs. Apple's limited widget API"
+
+  - name: "BTT (BetterTouchTool) notch support"
+    our_advantage: "Dedicated platform vs. notch as side feature"
+
+  - name: "Status Bar Apps (e.g., Bartender)"
+    our_advantage: "Notch is more prominent; cleaner UI; purpose-built"
+
+  - name: "iPad Dynamic Island Apps"
+    our_advantage: "Mac-native; no iPad required; local AI-first"
+
+# ============================================================================
+# MESSAGING PILLARS (Use in all marketing)
+# ============================================================================
+messaging_pillars:
+  - pillar: "Ambient Intelligence"
+    message: "HUD brings AI from chat windows into your always-visible notch. Jane is watching your back."
+    use_cases: ["release announcements", "social posts", "landing page"]
+
+  - pillar: "Developer Platform"
+    message: "Built by developers for developers. Open APIs, plugin system, 12 examples included."
+    use_cases: ["plugin guide", "developer documentation", "community engagement"]
+
+  - pillar: "Local Privacy"
+    message: "Your data stays on your Mac. HUD runs locally; no cloud tracking or telemetry."
+    use_cases: ["privacy-conscious users", "security posts", "FAQ"]
+
+  - pillar: "Extensibility"
+    message: "12 bundled plugins + open ecosystem. Build what you need; share with the community."
+    use_cases: ["plugin spotlights", "community features", "launch campaigns"]
+
+# ============================================================================
+# VISUAL IDENTITY (Design system)
+# ============================================================================
+visual_identity:
+  logo: "H∆D (notch icon) + wordmark"
+  primary_color: "#0EA5E9"  # cyan (matches Jane's brand)
+  secondary_color: "#1E293B"  # slate (system status aesthetic)
+  accent_color: "#10B981"  # green (community, growth)
+
+  typography:
+    - font: "SF Pro Display (macOS default)"
+      usage: "headings, UI"
+    - font: "SF Mono (monospace)"
+      usage: "code, technical content"
+
+  imagery:
+    - style: "minimal, geometric, notch-centric"
+    - examples: ["notch as stage for UI", "plugin icons in grid", "before/after screenshots"]
+    - avoid: ["generic stock photos", "busy interfaces", "desktop bloat"]
+
+# ============================================================================
+# SOCIAL MEDIA STYLE GUIDE
+# ============================================================================
+social_media:
+  twitter:
+    post_formats:
+      - "Thread: 3–5 part deep dive (plugin architecture, rendering engines)"
+      - "Single tweet: release announcement, plugin spotlight, community win"
+      - "Poll: feature voting, community sentiment"
+      - "Retweet + comment: celebrate community contributions"
+
+    tone_examples:
+      - "good: 'HUD v1.1 ships today. Plugin ecosystem is live. Build your first plugin with our 12 examples as reference.'"
+      - "bad: 'HUD is DISRUPTING the notch ecosystem! Game-changing AI interface!' (buzzwords)"
+
+    hashtags:
+      - "#macOS"
+      - "#openSource"
+      - "#AI"
+      - "#LocalLLM"
+      - "#DeveloperTools"
+      - (avoid excessive hashtags — max 3 per post)
+
+  github:
+    tone: "professional, helpful, concise"
+    response_templates:
+      - "Bug report: 'Thanks for reporting this. Can you share [environment details]? We'll investigate.'"
+      - "Feature request: 'Good idea. Let's discuss in a new discussion thread.'"
+      - "Plugin help: 'Check out [docs/PLUGIN-GUIDE.md] or ask in Discussions.'"
+
+# ============================================================================
+# CRISIS COMMUNICATION PLAN
+# ============================================================================
+crisis:
+  - scenario: "Security vulnerability discovered"
+    response: "Immediate hotfix + disclosure via GitHub Security Advisory. Post 1 tweet explaining fix."
+    owner: "Hephaestus (CTO)"
+
+  - scenario: "Major bug in release"
+    response: "Rollback + post-mortem. Twitter explanation + GitHub issue for root cause."
+    owner: "Hephaestus (CTO) + Hermes (CMO)"
+
+  - scenario: "Plugin ecosystem misuse (e.g., malware plugin)"
+    response: "Remove from registry + security advisory. Explain governance in public."
+    owner: "Hermes (CMO) + Hephaestus (CTO)"
+
+  - scenario: "Community backlash on feature decision"
+    response: "Acknowledge feedback in GitHub Discussion. Explain rationale clearly. No defensive posts."
+    owner: "Hermes (CMO)"

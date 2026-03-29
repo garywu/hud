@@ -55,6 +55,11 @@ struct PanelContentView: View {
 
                 janeDataSection
             }
+
+            // Voice recording button
+            Divider()
+                .background(Color.white.opacity(0.15))
+            VoiceButton()
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

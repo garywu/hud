@@ -18,6 +18,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let hoverMargin: CGFloat = 15
     private let hoverHideDelay: TimeInterval = 0.06
 
+    // MARK: - Jane State Machine (Animated Face)
+    /// Coordinates animation state for Jane's animated face
+    private var janeStateCoordinator: JaneStateCoordinator?
+
     // MARK: - Status bar size cycle order
     private let sizeCycle: [StatusBarSize] = [.xs, .small, .medium, .large, .xl]
     // MARK: - Display mode cycle order
@@ -28,6 +32,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let focusCycle: [String?] = [nil, "work", "sleep", "personal"]
     // MARK: - Mute state
     private var isMuted = false
+
+    // MARK: - Audio I/O (Voice Integration Phase 2)
+    private var audioIOManager: AudioIOManager?
+
+    // MARK: - Memory System (Voice Context Enrichment Phase 2)
+    private var voiceContextManager: VoiceContextManager?
 
     private var replaceNotch: Bool {
         get {
@@ -57,6 +67,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         log("=== HUD LAUNCH ===")
         log("replaceNotch=\(replaceNotch)")
 
+        // Initialize Jane State Coordinator for animated face
+        janeStateCoordinator = JaneStateCoordinator()
+        log("JaneStateCoordinator initialized")
+
+        // Initialize Jane Memory System (TIER 1: Recent Context)
+        initializeMemorySystem()
+        log("Memory system initialized (DatabaseManager + VoiceContextManager)")
+
         // Start watching ~/.atlas/status.json + queue + theme
         StatusWatcher.shared.startWatching()
         log("StatusWatcher started")
@@ -72,6 +90,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         log("EscalationEngine started")
         PluginRegistry.shared.loadPlugins()
         log("PluginRegistry loaded \(PluginRegistry.shared.plugins.count) plugins")
+
+        // Initialize audio I/O infrastructure (Phase 2: Voice Integration)
+        Task {
+            await setupAudioIO()
+        }
 
         setupStatusItem()
         log("Status item setup")
@@ -142,6 +165,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         notchWindow?.isPanelVisible = { [weak self] in
             self?.panelWindow?.isVisible ?? false
         }
+        // Pass the Jane state coordinator to notch window for animated face
+        notchWindow?.janeStateCoordinator = janeStateCoordinator
     }
 
     private func setupHotkey() {
@@ -690,6 +715,122 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let y = screenRect.minY - 120 - 4
             panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: 120), display: true)
             panel.orderFrontRegardless()
+        }
+    }
+
+    // MARK: - Jane State Machine Wiring (Voice/API/TTS Events)
+
+    /// Called when voice recording starts (microphone active)
+    func onVoiceStarted() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isVoiceActive = true
+            self.log("Jane: LISTENING — voice activated")
+        }
+    }
+
+    /// Called when voice recording stops (microphone inactive)
+    func onVoiceStopped() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isVoiceActive = false
+            self.log("Jane: voice deactivated")
+        }
+    }
+
+    /// Called when API/LLM request starts
+    func onAPIStarted() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isApiActive = true
+            self.log("Jane: THINKING — API request started")
+        }
+    }
+
+    /// Called when API/LLM request completes
+    func onAPIFinished() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isApiActive = false
+            self.log("Jane: API response ready")
+        }
+    }
+
+    /// Called when TTS/speech output starts
+    func onTTSStarted() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isTtsActive = true
+            self.log("Jane: RESPONDING — TTS started")
+        }
+    }
+
+    /// Called when TTS/speech output completes
+    func onTTSFinished() {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.isTtsActive = false
+            self.log("Jane: TTS finished")
+        }
+    }
+
+    /// Trigger an error state with message
+    func onError(_ message: String) {
+        DispatchQueue.main.async {
+            self.janeStateCoordinator?.setError(message)
+            self.log("Jane: ERROR — \(message)")
+        }
+    }
+
+    // MARK: - Audio I/O Setup (Voice Integration Phase 2)
+
+    /// Initializes audio I/O infrastructure for voice capture and playback.
+    /// Called asynchronously during app startup to avoid blocking the main thread.
+    /// Performs:
+    /// 1. Audio session configuration (playAndRecord category)
+    /// 2. AVAudioEngine initialization with input/output nodes
+    /// 3. Microphone permission request
+    private func setupAudioIO() async {
+        do {
+            audioIOManager = AudioIOManager()
+            try await audioIOManager?.setupAudioSession()
+            try await audioIOManager?.initialize()
+
+            let hasPermission = await audioIOManager?.requestMicrophonePermission() ?? false
+            if hasPermission {
+                log("Audio I/O initialized: microphone permission granted")
+            } else {
+                log("Audio I/O warning: microphone permission not granted (user may deny on first request)")
+            }
+        } catch {
+            log("Audio I/O initialization error: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Memory System Initialization (Phase 2)
+
+    /// Initializes Jane's memory system on app startup
+    /// Creates SQLite database at ~/.atlas/jane-hud/memory.db
+    /// Initializes TIER 1 (recent context) tables
+    private func initializeMemorySystem() {
+        do {
+            // Trigger DatabaseManager singleton initialization
+            // This creates ~/.atlas/jane-hud/memory.db and sets up TIER 1 schema
+            let db = DatabaseManager.shared
+
+            // Verify database is accessible by querying schema version
+            let results = try db.query("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
+            if let firstRow = results.first, let version = firstRow["version"] as? Int {
+                log("Memory: SQLite database initialized at ~/.atlas/jane-hud/memory.db (schema v\(version))")
+            } else {
+                log("Memory: Database created but schema_version not found (will be created on first use)")
+            }
+
+            // Initialize VoiceContextManager for transcription enrichment
+            voiceContextManager = VoiceContextManager(database: db)
+            log("Memory: VoiceContextManager ready for voice enrichment")
+
+            // Log initial stats
+            if let stats = voiceContextManager?.getMemoryStats(sessionId: "startup") {
+                log("Memory: Initial stats - \(stats.totalEntries) entries, \(stats.entryTypes) types")
+            }
+        } catch {
+            log("FATAL: Memory initialization failed: \(error.localizedDescription)")
+            // Continue anyway - memory is optional, not critical to app launch
         }
     }
 }

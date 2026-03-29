@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Jane: An always-present AI companion living in your MacBook notch. Persistent memory, voice interaction, local-first design. Open source, MIT licensed.">
+  <meta name="theme-color" content="#0f172a">
+
+  <title>Jane — AI Companion in Your Notch</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Google Analytics placeholder -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PLACEHOLDER"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    // gtag('config', 'G-PLACEHOLDER');
+  </script>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="#" class="logo">
+        <span class="logo-icon">◻️</span>
+        <span class="logo-text">Jane</span>
+      </a>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-links" id="navLinks">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="https://github.com/garywu/hud" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+        <a href="#cta" class="nav-link nav-cta">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">AI that remembers what you said last week</h1>
+        <p class="hero-subtitle">Jane is an always-on AI companion living in your MacBook notch. With persistent memory, voice interaction, and local machine access—fully open source.</p>
+
+        <div class="hero-ctas">
+          <a href="https://github.com/garywu/hud" target="_blank" rel="noopener" class="btn btn-primary">
+            Get Started on GitHub
+            <span class="btn-icon">→</span>
+          </a>
+          <a href="#pricing" class="btn btn-secondary">
+            View Pricing
+          </a>
+        </div>
+
+        <div class="hero-badges">
+          <div class="badge">
+            <span class="badge-icon">⭐</span>
+            <span>MIT Licensed</span>
+          </div>
+          <div class="badge">
+            <span class="badge-icon">🔒</span>
+            <span>Local-First</span>
+          </div>
+          <div class="badge">
+            <span class="badge-icon">🎤</span>
+            <span>Voice Control</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="notch-mockup">
+          <div class="notch-container">
+            <div class="notch-inner">
+              <div class="jane-avatar">
+                <div class="avatar-eyes">
+                  <span class="eye"></span>
+                  <span class="eye"></span>
+                </div>
+                <div class="avatar-mouth"></div>
+              </div>
+            </div>
+          </div>
+          <p class="notch-label">Jane in your notch</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video embed placeholder -->
+    <div class="container hero-video">
+      <div class="video-container">
+        <iframe class="video-iframe"
+                src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?modestbranding=1&rel=0&controls=1"
+                title="Jane HUD Demo Video"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+        </iframe>
+        <div class="video-placeholder">
+          <p>Demo video coming soon</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem/Solution Section -->
+  <section class="problem-solution">
+    <div class="container">
+      <div class="section-header">
+        <h2>The Problem</h2>
+        <p>You ask ChatGPT the same question twice. She forgets. You spend 10 minutes re-explaining context.</p>
+      </div>
+
+      <div class="comparison-grid">
+        <div class="comparison-card before">
+          <h3>Before Jane</h3>
+          <ul class="comparison-list">
+            <li>Open ChatGPT tab</li>
+            <li>Type your question</li>
+            <li>Close the window</li>
+            <li>🧠 Forgotten instantly</li>
+            <li>Ask again next week?</li>
+            <li>"Who was that person you mentioned?"</li>
+            <li>Start over from scratch</li>
+          </ul>
+        </div>
+
+        <div class="comparison-card after">
+          <h3>After Jane</h3>
+          <ul class="comparison-list">
+            <li>"Jane, what did Sarah recommend?"</li>
+            <li>Instant voice answer</li>
+            <li>She remembers from last week</li>
+            <li>🧠 Context persistent</li>
+            <li>Proactive alerts</li>
+            <li>"Sarah mentioned 3 frameworks"</li>
+            <li>Full conversation history</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Superpowers</h2>
+        <p>What makes Jane different from a chatbot</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card" data-aos="fade-up">
+          <div class="feature-icon">🧠</div>
+          <h3>Persistent Memory</h3>
+          <p>Remembers conversations spanning weeks or months. She knows your projects, preferences, and context.</p>
+        </div>
+
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="feature-icon">🎤</div>
+          <h3>Voice Interaction</h3>
+          <p>Wake word activation. Natural voice input and expressive text-to-speech output. Hands-free when you need it.</p>
+        </div>
+
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+          <div class="feature-icon">👤</div>
+          <h3>Ambient Presence</h3>
+          <p>A face in your notch. Expressive avatar that responds to conversation. Always there, never intrusive.</p>
+        </div>
+
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+          <div class="feature-icon">⚡</div>
+          <h3>Local Superpowers</h3>
+          <p>Access your files, monitor your system, control apps. Privacy-first: data stays on your machine.</p>
+        </div>
+
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+          <div class="feature-icon">🔓</div>
+          <h3>Open Source</h3>
+          <p>MIT licensed. No vendor lock-in. Self-hosted option. Extend with plugins. Built by the community.</p>
+        </div>
+
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="500">
+          <div class="feature-icon">🧩</div>
+          <h3>Extensible</h3>
+          <p>Plugin system for custom integrations. Deep reasoning with Opus or o3 models. Async research and tasks.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <h2>Simple Pricing</h2>
+        <p>Start free. Upgrade when you need cloud sync and premium models.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="pricing-card pricing-free">
+          <h3>Free</h3>
+          <p class="price">$0<span>/month</span></p>
+          <ul class="pricing-features">
+            <li>✓ Jane daemon</li>
+            <li>✓ Voice input/output</li>
+            <li>✓ 30-day memory</li>
+            <li>✓ Local file access</li>
+            <li>✓ Open source community</li>
+            <li>✗ Cloud sync</li>
+            <li>✗ Premium models</li>
+          </ul>
+          <a href="https://github.com/garywu/hud" target="_blank" rel="noopener" class="btn btn-outline">
+            Get Started
+          </a>
+          <p class="pricing-note">Forever free. No credit card required.</p>
+        </div>
+
+        <div class="pricing-card pricing-pro">
+          <div class="pricing-badge">Most Popular</div>
+          <h3>Pro</h3>
+          <p class="price">$25<span>/month</span></p>
+          <ul class="pricing-features">
+            <li>✓ Jane daemon</li>
+            <li>✓ Voice input/output</li>
+            <li>✓ 3-month memory + cloud</li>
+            <li>✓ Multi-device (5 Macs)</li>
+            <li>✓ Premium models (Opus, o3)</li>
+            <li>✓ Async deep research</li>
+            <li>✓ Voice cloning</li>
+          </ul>
+          <a href="#cta" class="btn btn-primary">
+            Coming Soon
+          </a>
+          <p class="pricing-note">First 100 Pro subscribers: 50% off first year.</p>
+        </div>
+      </div>
+
+      <div class="pricing-details">
+        <h4>Why Pro?</h4>
+        <p>Infrastructure costs (~$15/user) + model costs + team runway. Pro tier funds open-source development and keeps Jane free forever for everyone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof Section -->
+  <section class="social-proof">
+    <div class="container">
+      <div class="section-header">
+        <h2>Built with Trust</h2>
+      </div>
+
+      <div class="proof-grid">
+        <div class="proof-card">
+          <p class="proof-quote">"Jane is the always-on AI companion I've been waiting for. No more context-switching, no more explaining myself twice."</p>
+          <p class="proof-author">— Early Adopter</p>
+        </div>
+
+        <div class="proof-card">
+          <div class="proof-stat">
+            <span class="proof-number">MIT</span>
+            <span class="proof-label">Licensed</span>
+          </div>
+          <p>No vendor lock-in. Open source from day one.</p>
+        </div>
+
+        <div class="proof-card">
+          <div class="proof-stat">
+            <span class="proof-number">macOS</span>
+            <span class="proof-label">Native</span>
+          </div>
+          <p>Built for Apple Silicon. Optimized for your notch.</p>
+        </div>
+      </div>
+
+      <div class="github-stats">
+        <a href="https://github.com/garywu/hud" target="_blank" rel="noopener" class="github-link">
+          <span>⭐ Star on GitHub</span>
+          <span class="github-count">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Ready to meet Jane?</h2>
+        <p>Join the Product Hunt launch. Free tier lives on GitHub today.</p>
+
+        <div class="cta-buttons">
+          <a href="https://github.com/garywu/hud" target="_blank" rel="noopener" class="btn btn-primary btn-large">
+            Get Started Free
+          </a>
+          <a href="https://discord.gg/jane" target="_blank" rel="noopener" class="btn btn-secondary btn-large">
+            Join Discord
+          </a>
+        </div>
+
+        <div class="email-signup">
+          <p class="signup-label">Get updates on launch day:</p>
+          <form class="signup-form" id="signupForm">
+            <input
+              type="email"
+              placeholder="your@email.com"
+              required
+              aria-label="Email for updates"
+              class="email-input"
+            >
+            <button type="submit" class="btn btn-primary">
+              Notify Me
+            </button>
+          </form>
+          <p class="signup-note">No spam. Product Hunt launch updates only.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-section">
+        <h4>Jane</h4>
+        <ul>
+          <li><a href="https://github.com/garywu/hud" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://discord.gg/jane" target="_blank" rel="noopener">Discord</a></li>
+          <li><a href="#" onclick="scrollToSection('features'); return false;">Features</a></li>
+          <li><a href="#" onclick="scrollToSection('pricing'); return false;">Pricing</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="https://github.com/garywu/hud/wiki" target="_blank" rel="noopener">Docs</a></li>
+          <li><a href="https://github.com/garywu/hud/discussions" target="_blank" rel="noopener">Community</a></li>
+          <li><a href="#" onclick="alert('Coming soon'); return false;">Blog</a></li>
+          <li><a href="#" onclick="alert('Coming soon'); return false;">Roadmap</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#" onclick="alert('Coming soon'); return false;">Privacy</a></li>
+          <li><a href="#" onclick="alert('Coming soon'); return false;">Terms</a></li>
+          <li><a href="https://github.com/garywu/hud/blob/main/LICENSE" target="_blank" rel="noopener">License</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section social">
+        <h4>Follow</h4>
+        <div class="social-links">
+          <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter">
+            𝕏
+          </a>
+          <a href="https://github.com/garywu" target="_blank" rel="noopener" aria-label="GitHub">
+            ↳
+          </a>
+          <a href="https://discord.gg/jane" target="_blank" rel="noopener" aria-label="Discord">
+            ◈
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Jane. Built with <span class="heart">♥</span> for macOS.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

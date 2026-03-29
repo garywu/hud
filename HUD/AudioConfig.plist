@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>audio_session</key>
+	<dict>
+		<key>category</key>
+		<string>playAndRecord</string>
+		<key>mode</key>
+		<string>default</string>
+		<key>options</key>
+		<array>
+			<string>defaultToSpeaker</string>
+			<string>allowBluetooth</string>
+		</array>
+	</dict>
+	<key>capture</key>
+	<dict>
+		<key>sample_rate_hz</key>
+		<integer>16000</integer>
+		<key>channels</key>
+		<integer>1</integer>
+		<key>buffer_frame_size</key>
+		<integer>256</integer>
+		<key>latency_target_ms</key>
+		<integer>16</integer>
+	</dict>
+	<key>playback</key>
+	<dict>
+		<key>sample_rate_hz</key>
+		<integer>16000</integer>
+		<key>channels</key>
+		<integer>1</integer>
+	</dict>
+	<key>metering</key>
+	<dict>
+		<key>enabled</key>
+		<true/>
+		<key>rms_update_interval_ms</key>
+		<integer>50</integer>
+	</dict>
+	<key>interruption_handling</key>
+	<dict>
+		<key>auto_recover</key>
+		<true/>
+		<key>pause_on_interrupt</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

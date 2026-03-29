@@ -53,6 +53,9 @@ class NotchWindow: NSPanel {
     /// SwiftUI content overlay shown inside the pill when expanded
     private var pillContentHost: NSHostingView<NotchPillContent>?
 
+    /// Jane State Coordinator for animated face (injected from AppDelegate)
+    var janeStateCoordinator: JaneStateCoordinator?
+
     init(onHover: @escaping () -> Void) {
         self.onHover = onHover
 
@@ -85,7 +88,7 @@ class NotchWindow: NSPanel {
             cv.layer?.masksToBounds = false
 
             // SwiftUI content overlay inside the pill
-            let hostView = NSHostingView(rootView: NotchPillContent())
+            let hostView = NSHostingView(rootView: NotchPillContent(janeStateCoordinator: janeStateCoordinator))
             hostView.frame = cv.bounds
             hostView.autoresizingMask = [.width, .height]
             hostView.alphaValue = 1
@@ -607,13 +610,13 @@ class NotchWindow: NSPanel {
 
     private func hoverGrow() {
         pillView.isHovered = true
-        pillContentHost?.rootView = NotchPillContent(isHovering: true)
+        pillContentHost?.rootView = NotchPillContent(isHovering: true, janeStateCoordinator: janeStateCoordinator)
         setFrame(applyHoverGrow(to: frame), display: true)
     }
 
     private func hoverShrink() {
         pillView.isHovered = false
-        pillContentHost?.rootView = NotchPillContent(isHovering: false)
+        pillContentHost?.rootView = NotchPillContent(isHovering: false, janeStateCoordinator: janeStateCoordinator)
 
         if isFloatingMode {
             // In floating mode, just reposition to collapsed floating size
@@ -936,6 +939,7 @@ enum NotchDisplayState: Equatable {
 
 struct NotchPillContent: View {
     var isHovering: Bool = false
+    var janeStateCoordinator: JaneStateCoordinator?
     private var displayState: NotchDisplayState { .current }
     private var statusWatcher: StatusWatcher { StatusWatcher.shared }
     private var isExpanded: Bool { displayState == .attention || displayState == .urgent }
@@ -1019,10 +1023,14 @@ struct NotchPillContent: View {
         switch collapsedProfile.left?.type {
         case "severity":
             statusCircleColor
-        default: // "avatar"
-            Image("face")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+        default: // "avatar" / "animated_face"
+            if let coordinator = janeStateCoordinator {
+                AnimatedFace(coordinator: coordinator, containerSize: CGSize(width: 30, height: 28))
+            } else {
+                Image("face")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
         }
     }
 
@@ -1031,9 +1039,13 @@ struct NotchPillContent: View {
     private var collapsedRightContent: some View {
         switch collapsedProfile.right?.type {
         case "avatar":
-            Image("face")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+            if let coordinator = janeStateCoordinator {
+                AnimatedFace(coordinator: coordinator, containerSize: CGSize(width: 30, height: 28))
+            } else {
+                Image("face")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
         default: // "severity"
             statusCircleColor
         }

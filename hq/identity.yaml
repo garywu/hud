@@ -1,0 +1,239 @@
+# HUD — Business Unit Identity Card
+# Location: hud/hq/identity.yaml
+# Status: Production
+# Last Updated: 2026-03-28
+
+name: "HUD"
+slug: "hud"
+type: "platform"
+description: "Programmable notch display platform for macOS — unified 50×60pt rendering engine for ambient interfaces, system status, and notifications"
+status: "production"
+owner: "hermes"
+reports_to: "hermes"
+
+domain: "hud.notch.sh"
+
+# ============================================================================
+# SERVICES PROVIDED
+# ============================================================================
+provides:
+  - service: "notch-rendering-engine"
+    description: "Unified display engine (LCD, scanner, text modes) with 5 font sizes and 3 themes"
+    endpoint: "localhost:7070"
+    consumers: [atlas, jane-daemon]
+
+  - service: "http-api"
+    description: "REST + SSE API for remote display control, plugin management, status updates"
+    endpoint: "GET/POST localhost:7070/*"
+    consumers: [jane-daemon, atlas-serve]
+
+  - service: "notification-os"
+    description: "Policy engine, rate limiting, focus modes, escalation ladder, priority queue"
+    endpoint: "POST localhost:7070/status"
+    consumers: [jane-daemon, atlas-serve]
+
+  - service: "plugin-system"
+    description: "Extensible plugin architecture with 12 bundled plugins (weather, git, docker, ai-status, etc.)"
+    endpoint: "localhost:7070/plugins"
+    consumers: []
+
+  - service: "distribution"
+    description: "Homebrew formula + direct download for macOS 14+ (Universal 2 binary)"
+    endpoint: "https://github.com/garywu/hud/releases"
+    consumers: []
+
+# ============================================================================
+# SERVICES CONSUMED
+# ============================================================================
+consumes:
+  - provider: "atlas"
+    service: "jane-observations"
+    purpose: "Real-time Jane activity stream, status, alerts for HUD display"
+
+  - provider: "api-mom"
+    service: "apimom-router"
+    purpose: "Weather, news, stock data aggregation for bundled plugins"
+
+# ============================================================================
+# INFRASTRUCTURE (None for v1 — macOS-only, no Workers)
+# ============================================================================
+infrastructure:
+  workers: []
+  d1: []
+  r2: []
+  kv: []
+  durable_objects: []
+
+macos:
+  notch_display: "50×60pt"
+  background_app_refresh: required
+  microphone: optional
+  file_access: optional
+  accessibility_api: optional
+
+# ============================================================================
+# SECRETS & CREDENTIALS
+# ============================================================================
+secrets:
+  vault: "bu-hud"
+  service_account: "sa-hud"
+  refs:
+    - key: "GITHUB_RELEASE_TOKEN"
+      vault_item: "github-hud-releases"
+      scope: "repo:garywu/hud"
+      usage: "GitHub Actions publish releases"
+
+    - key: "HOMEBREW_GITHUB_TOKEN"
+      vault_item: "homebrew-publish"
+      usage: "Homebrew tap updates"
+
+    - key: "SENTRY_DSN"
+      vault_item: "sentry-hud"
+      usage: "Error tracking and crash reporting"
+
+    - key: "API_MOM_API_KEY"
+      vault_item: "api-mom-credential"
+      usage: "Plugin data aggregation (weather, news, stocks)"
+
+    - key: "JANE_WEBHOOK_SECRET"
+      vault_item: "jane-daemon-webhook"
+      usage: "Secure Jane observer notifications to HUD"
+
+# ============================================================================
+# STANDARD OPERATING PROCEDURES
+# ============================================================================
+sops:
+  - sop-secret-management
+  - sop-repo-tooling
+  - sop-hq-structure
+  - sop-macos-notch-deployment
+  - sop-homebrew-release-pipeline
+  - sop-plugin-ecosystem-governance
+
+# ============================================================================
+# BRAND & POSITIONING (CMO owned)
+# ============================================================================
+brand:
+  positioning: "The dashboard for always-watching AI — bring ambient intelligence to your Mac's notch"
+  icp: "Developer + power users running local AI companions, system status dashboards, creative tools"
+  tone: "technical, delightful, minimalist"
+  forbidden_words: ["synergy", "leverage", "disrupt", "AI for everyone", "cute", "fun", "gimmick", "always-listening"]
+
+  channels:
+    - name: "Twitter (@notchsh)"
+      category: "developer-relations"
+      cadence: "2–3x weekly"
+
+    - name: "GitHub Discussions"
+      category: "community-support"
+      sla: "24h response time"
+
+    - name: "Product Hunt (eventual)"
+      category: "launch"
+
+# ============================================================================
+# METRICS & KPIs (owned by OpenDash/Scram Jet)
+# ============================================================================
+metrics:
+  primary:
+    - name: "monthly-active-installs"
+      source: "homebrew-analytics"
+      target: 500
+      alert_threshold: 10  # % drop week-over-week
+
+    - name: "github-stars"
+      source: "github-api"
+      target: 1000
+
+    - name: "plugin-ecosystem-extensions"
+      source: "hud-manifest-registry"
+      target: 25
+
+  secondary:
+    - name: "release-cycle-days"
+      source: "github-releases"
+      target: 14
+
+    - name: "plugin-quality-score"
+      source: "manifest-validation"
+      target: 95
+
+    - name: "community-response-sla"
+      source: "github-discussions"
+      target: 24  # hours
+
+# ============================================================================
+# ARCHITECTURE REFERENCES
+# ============================================================================
+references:
+  articles:
+    - "ambient-ai-notch-ui-design-patterns"
+    - "macos-notch-hid-rendering-apis"
+    - "plugin-ecosystem-patterns"
+    - "homebrew-distribution-pipeline"
+
+  research:
+    - "notch-platform-competitive-analysis-20260328"
+    - "macos-accessibility-api-capabilities-20260328"
+
+# ============================================================================
+# GOALS & ROADMAP
+# ============================================================================
+goals:
+  - slug: "hud-v1-release"
+    description: "Ship HUD v1.0.0 to public (Homebrew + direct download)"
+    status: "complete"
+    verification: "GitHub release exists, Homebrew formula published"
+
+  - slug: "hud-jane-integration"
+    description: "Jane daemon uses HUD for all display + notifications"
+    status: "in-progress"
+    verification: "jane-daemon WebSocket → HUD API, Jane status visible in notch"
+
+  - slug: "plugin-ecosystem-launch"
+    description: "First 3rd-party plugin published to registry"
+    status: "pending"
+    verification: "External plugin in manifest, functional in notch"
+
+  - slug: "hud-analytics-dashboard"
+    description: "OpenDash panel showing install, engagement, plugin usage"
+    status: "pending"
+    verification: "OpenDash /hud route displays real-time HUD metrics"
+
+# ============================================================================
+# OPERATIONAL SCHEDULE
+# ============================================================================
+schedule: 604800000  # 7 days = new releases, plugin governance reviews
+
+# ============================================================================
+# SERVICE LEVEL AGREEMENTS (SLAs)
+# ============================================================================
+slas:
+  - name: "GitHub release pipeline"
+    target: "24h from merge to published release"
+    owner: "Hephaestus (CTO)"
+
+  - name: "Homebrew formula update"
+    target: "1h after GitHub release"
+    owner: "Hephaestus (CTO)"
+
+  - name: "Community issue response"
+    target: "24h acknowledgment, 48h first diagnosis"
+    owner: "Hermes (CMO)"
+
+  - name: "Plugin submission review"
+    target: "48h technical review, feedback provided"
+    owner: "Hermes (CMO) + Hephaestus (CTO)"
+
+  - name: "Security vulnerability response"
+    target: "4h triage, 24h hotfix"
+    owner: "Hephaestus (CTO)"
+
+# ============================================================================
+# EMERGENCY CONTACT
+# ============================================================================
+emergency_contact:
+  primary: "Hermes (CMO) - hermes@atlas.internal"
+  secondary: "Hephaestus (CTO) - hephaestus@atlas.internal"
+  escalation_channel: "Telegram #atlas-hud-oncall"
+  page_threshold: "Security vulnerability, complete service outage, or > 50% install drop"
