@@ -22,6 +22,14 @@ class NotchWindow: NSPanel {
     private var notchWidth: CGFloat = 180
     private var notchHeight: CGFloat = 37
 
+    /// Whether this window is in floating panel mode (no notch)
+    private(set) var isFloatingMode = false
+
+    /// Floating panel constants
+    private static let floatingWidth: CGFloat = 265
+    private static let floatingHeight: CGFloat = 37
+    private static let floatingTopOffset: CGFloat = 4  // below menu bar
+
     /// Whether the notch is currently expanded (wider, for working state)
     private var isExpanded = false
 
@@ -91,11 +99,34 @@ class NotchWindow: NSPanel {
         registerForDraggedTypes([.fileURL, .URL])
 
         detectGeometry()
+        applyDisplayMode()
         positionAtNotch()
         orderFrontRegardless()
         setupTracking()
         observeScreenChanges()
         observeStatusChanges()
+    }
+
+    /// Determines and applies display mode based on config + hardware.
+    private func applyDisplayMode() {
+        let mode = StatusWatcher.shared.config.resolvedDisplayMode
+        isFloatingMode = (mode == "floating")
+
+        if isFloatingMode {
+            // Floating panel: add shadow, make draggable, use rounded corners
+            hasShadow = true
+            isMovableByWindowBackground = true
+            level = .floating
+            // Remove .stationary so the window can be dragged
+            collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
+            pillView.isFloatingMode = true
+        } else {
+            hasShadow = false
+            isMovableByWindowBackground = false
+            level = .statusBar
+            collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+            pillView.isFloatingMode = false
+        }
     }
 
     // MARK: - Drag destination (treat drag-over like hover)
@@ -222,6 +253,12 @@ class NotchWindow: NSPanel {
 
     private func expandWithBounce() {
         isExpanded = true
+
+        if isFloatingMode {
+            expandFloating()
+            return
+        }
+
         guard let screen = NSScreen.builtIn else { return }
         let screenFrame = screen.frame
 
@@ -275,6 +312,58 @@ class NotchWindow: NSPanel {
         displayLink.start()
     }
 
+    /// Expand in floating mode -- grows wider to show expanded content
+    private func expandFloating() {
+        guard let screen = NSScreen.builtIn ?? NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let visibleFrame = screen.visibleFrame
+        let menuBarHeight = screenFrame.maxY - visibleFrame.maxY
+
+        let layout = Self.activeLayout
+        let targetWidth: CGFloat = Self.floatingWidth + layout.leftEar + layout.rightEar
+        let targetHeight: CGFloat = Self.floatingHeight + layout.bottomStrip
+        let position = StatusWatcher.shared.config.resolvedFloatingPosition
+        let x: CGFloat
+        switch position {
+        case "left":
+            x = screenFrame.minX + 80
+        case "right":
+            x = screenFrame.maxX - targetWidth - 80
+        default:
+            x = screenFrame.midX - targetWidth / 2
+        }
+        let y = screenFrame.maxY - menuBarHeight - Self.floatingTopOffset - targetHeight
+
+        var targetFrame = NSRect(x: x, y: y, width: targetWidth, height: targetHeight)
+        if isHovered {
+            targetFrame = applyHoverGrow(to: targetFrame)
+        }
+
+        pillView.alphaValue = 1
+        pillView.isUShape = false  // floating mode never uses U-shape (no notch cutout)
+        pillContentHost?.alphaValue = 1
+
+        let startFrame = frame
+        let startTime = CACurrentMediaTime()
+        let duration: Double = 0.5
+
+        let displayLink = CVDisplayLinkWrapper { [weak self] in
+            guard let self else { return false }
+            let elapsed = CACurrentMediaTime() - startTime
+            let t = min(elapsed / duration, 1.0)
+            let bounce = Self.bounceEase(t)
+            let currentX = startFrame.origin.x + (targetFrame.origin.x - startFrame.origin.x) * bounce
+            let currentY = startFrame.origin.y + (targetFrame.origin.y - startFrame.origin.y) * bounce
+            let currentWidth = startFrame.width + (targetFrame.width - startFrame.width) * bounce
+            let currentHeight = startFrame.height + (targetFrame.height - startFrame.height) * bounce
+            DispatchQueue.main.async {
+                self.setFrame(NSRect(x: currentX, y: currentY, width: currentWidth, height: currentHeight), display: true)
+            }
+            return t < 1.0
+        }
+        displayLink.start()
+    }
+
     private func collapse() {
         isExpanded = false
         pillView.isUShape = false
@@ -283,6 +372,11 @@ class NotchWindow: NSPanel {
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.15
             self.pillContentHost?.animator().alphaValue = 1
+        }
+
+        if isFloatingMode {
+            collapseFloating()
+            return
         }
 
         guard let screen = NSScreen.builtIn else { return }
@@ -330,6 +424,53 @@ class NotchWindow: NSPanel {
         displayLink.start()
     }
 
+    /// Collapse back to floating pill
+    private func collapseFloating() {
+        guard let screen = NSScreen.builtIn ?? NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let visibleFrame = screen.visibleFrame
+        let menuBarHeight = screenFrame.maxY - visibleFrame.maxY
+        let totalHeight = Self.floatingHeight + StatusBarLayout.height
+        let position = StatusWatcher.shared.config.resolvedFloatingPosition
+        let x: CGFloat
+        switch position {
+        case "left":
+            x = screenFrame.minX + 80
+        case "right":
+            x = screenFrame.maxX - Self.floatingWidth - 80
+        default:
+            x = screenFrame.midX - Self.floatingWidth / 2
+        }
+        let y = screenFrame.maxY - menuBarHeight - Self.floatingTopOffset - totalHeight
+        var targetFrame = NSRect(x: x, y: y, width: Self.floatingWidth, height: totalHeight)
+        if isHovered {
+            targetFrame = applyHoverGrow(to: targetFrame)
+        }
+
+        let startFrame = frame
+        let startTime = CACurrentMediaTime()
+        let duration: Double = 0.3
+
+        let displayLink = CVDisplayLinkWrapper { [weak self] in
+            guard let self else { return false }
+            let elapsed = CACurrentMediaTime() - startTime
+            let t = min(elapsed / duration, 1.0)
+            let ease = 1.0 - pow(1.0 - t, 3.0)
+            let currentX = startFrame.origin.x + (targetFrame.origin.x - startFrame.origin.x) * ease
+            let currentY = startFrame.origin.y + (targetFrame.origin.y - startFrame.origin.y) * ease
+            let currentWidth = startFrame.width + (targetFrame.width - startFrame.width) * ease
+            let currentHeight = startFrame.height + (targetFrame.height - startFrame.height) * ease
+            DispatchQueue.main.async {
+                self.setFrame(NSRect(x: currentX, y: currentY, width: currentWidth, height: currentHeight), display: true)
+                if t >= 1.0 {
+                    self.pillContentHost?.alphaValue = 1
+                }
+            }
+            return t < 1.0
+        }
+        displayLink.start()
+    }
+
     /// Spring / bounce easing -- overshoots then settles
     private static func bounceEase(_ t: Double) -> Double {
         let omega = 12.0
@@ -359,12 +500,36 @@ class NotchWindow: NSPanel {
     var currentStatusBarMode: StatusBarLayout.Mode { StatusBarLayout.mode }
 
     private func positionAtNotch() {
+        if isFloatingMode {
+            positionFloating()
+            return
+        }
         guard let screen = NSScreen.builtIn else { return }
         let screenFrame = screen.frame
         let totalHeight = notchHeight + StatusBarLayout.height
         let x = screenFrame.midX - notchWidth / 2 - collapsedPadding
         let y = screenFrame.maxY - totalHeight
         setFrame(NSRect(x: x, y: y, width: notchWidth + collapsedPadding * 2, height: totalHeight), display: true)
+    }
+
+    private func positionFloating() {
+        guard let screen = NSScreen.builtIn ?? NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let visibleFrame = screen.visibleFrame
+        let menuBarHeight = screenFrame.maxY - visibleFrame.maxY
+        let totalHeight = Self.floatingHeight + StatusBarLayout.height
+        let position = StatusWatcher.shared.config.resolvedFloatingPosition
+        let x: CGFloat
+        switch position {
+        case "left":
+            x = screenFrame.minX + 80
+        case "right":
+            x = screenFrame.maxX - Self.floatingWidth - 80
+        default: // "center"
+            x = screenFrame.midX - Self.floatingWidth / 2
+        }
+        let y = screenFrame.maxY - menuBarHeight - Self.floatingTopOffset - totalHeight
+        setFrame(NSRect(x: x, y: y, width: Self.floatingWidth, height: totalHeight), display: true)
     }
 
     // MARK: - Mouse tracking
@@ -382,17 +547,23 @@ class NotchWindow: NSPanel {
     private func checkMouse() {
         let mouseLocation = NSEvent.mouseLocation
 
-        guard let screen = NSScreen.builtIn else { return }
-        let screenFrame = screen.frame
-        let effectiveWidth = isExpanded ? notchWidth + 80 : notchWidth
-        let notchRect = NSRect(
-            x: screenFrame.midX - effectiveWidth / 2,
-            y: screenFrame.maxY - notchHeight,
-            width: effectiveWidth,
-            height: notchHeight + 1
-        )
+        let hoverRect: NSRect
+        if isFloatingMode {
+            // In floating mode, hover zone is the window frame itself
+            hoverRect = frame.insetBy(dx: -2, dy: -2)
+        } else {
+            guard let screen = NSScreen.builtIn else { return }
+            let screenFrame = screen.frame
+            let effectiveWidth = isExpanded ? notchWidth + 80 : notchWidth
+            hoverRect = NSRect(
+                x: screenFrame.midX - effectiveWidth / 2,
+                y: screenFrame.maxY - notchHeight,
+                width: effectiveWidth,
+                height: notchHeight + 1
+            )
+        }
 
-        let mouseInNotch = notchRect.contains(mouseLocation)
+        let mouseInNotch = hoverRect.contains(mouseLocation)
         let mouseInAdditional = additionalHoverRects.contains { $0().contains(mouseLocation) }
 
         if mouseInNotch || mouseInAdditional {
@@ -443,6 +614,13 @@ class NotchWindow: NSPanel {
     private func hoverShrink() {
         pillView.isHovered = false
         pillContentHost?.rootView = NotchPillContent(isHovering: false)
+
+        if isFloatingMode {
+            // In floating mode, just reposition to collapsed floating size
+            positionFloating()
+            return
+        }
+
         guard let screen = NSScreen.builtIn else { return }
         let screenFrame = screen.frame
         let baseWidth = isExpanded ? notchWidth + 80 : notchWidth
@@ -464,6 +642,7 @@ class NotchWindow: NSPanel {
             queue: .main
         ) { [weak self] _ in
             self?.detectGeometry()
+            self?.applyDisplayMode()
             self?.positionAtNotch()
         }
     }
@@ -481,12 +660,23 @@ struct NotchGeometry {
     let notchHeight: CGFloat
     let leftEarAvailable: CGFloat   // total menu bar space left of notch
     let rightEarAvailable: CGFloat  // total status icon space right of notch
+    let hasNotch: Bool              // whether a real notch was detected
 
     static let fallback = NotchGeometry(
         screenWidth: 1710, screenHeight: 1107,
         notchWidth: 180, notchHeight: 37,
-        leftEarAvailable: 763, rightEarAvailable: 762
+        leftEarAvailable: 763, rightEarAvailable: 762,
+        hasNotch: true
     )
+
+    /// Quick check: does the current built-in screen have a notch?
+    static var screenHasNotch: Bool {
+        guard let screen = NSScreen.builtIn else { return false }
+        if #available(macOS 12.0, *) {
+            return screen.auxiliaryTopLeftArea != nil && screen.auxiliaryTopRightArea != nil
+        }
+        return false
+    }
 
     /// Detect screen and notch dimensions at runtime.
     static func detect() -> NotchGeometry {
@@ -497,6 +687,7 @@ struct NotchGeometry {
         var nh: CGFloat = 37
         var leftAvail: CGFloat = 0
         var rightAvail: CGFloat = 0
+        var detected = false
 
         if #available(macOS 12.0, *),
            let left = screen.auxiliaryTopLeftArea,
@@ -505,6 +696,7 @@ struct NotchGeometry {
             nh = frame.maxY - min(left.minY, right.minY)
             leftAvail = left.width
             rightAvail = right.width
+            detected = true
         } else {
             let menuBarHeight = frame.maxY - screen.visibleFrame.maxY
             nw = 180
@@ -519,7 +711,8 @@ struct NotchGeometry {
             notchWidth: nw,
             notchHeight: nh,
             leftEarAvailable: leftAvail,
-            rightEarAvailable: rightAvail
+            rightEarAvailable: rightAvail,
+            hasNotch: detected
         )
     }
 
@@ -534,6 +727,8 @@ struct NotchGeometry {
             "screen": ["width": screenWidth, "height": screenHeight],
             "notch": ["width": notchWidth, "height": notchHeight],
             "available": ["left": leftEarAvailable, "right": rightEarAvailable],
+            "hasNotch": hasNotch,
+            "displayMode": StatusWatcher.shared.config.resolvedDisplayMode,
             "detected": now
         ]
 
@@ -576,6 +771,16 @@ class NotchPillView: NSView {
         }
     }
 
+    /// Whether in floating panel mode (fully rounded, border, shadow)
+    var isFloatingMode: Bool = false {
+        didSet {
+            guard isFloatingMode != oldValue else { return }
+            updateFloatingAppearance()
+            needsDisplay = true
+            needsLayout = true
+        }
+    }
+
     /// The notch dimensions (set by NotchWindow)
     var notchWidth: CGFloat = 180
     var notchHeight: CGFloat = 37
@@ -592,6 +797,23 @@ class NotchPillView: NSView {
         layer?.backgroundColor = .clear
         shapeLayer.fillColor = NSColor.black.cgColor
         layer?.addSublayer(shapeLayer)
+    }
+
+    private func updateFloatingAppearance() {
+        if isFloatingMode {
+            shapeLayer.strokeColor = NSColor.white.withAlphaComponent(0.12).cgColor
+            shapeLayer.lineWidth = 0.5
+            shapeLayer.shadowColor = NSColor.black.cgColor
+            shapeLayer.shadowOpacity = 0.5
+            shapeLayer.shadowOffset = CGSize(width: 0, height: -2)
+            shapeLayer.shadowRadius = 8
+            shapeLayer.fillColor = NSColor.black.withAlphaComponent(0.85).cgColor
+        } else {
+            shapeLayer.strokeColor = nil
+            shapeLayer.lineWidth = 0
+            shapeLayer.shadowOpacity = 0
+            shapeLayer.fillColor = NSColor.black.cgColor
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -612,6 +834,15 @@ class NotchPillView: NSView {
         shapeLayer.frame = CGRect(x: 0, y: 0, width: w, height: h)
 
         let path = CGMutablePath()
+
+        if isFloatingMode {
+            // Floating mode: fully rounded rectangle on all corners
+            let cr: CGFloat = 10
+            let rect = CGRect(x: 0, y: 0, width: w, height: h)
+            path.addRoundedRect(in: rect, cornerWidth: cr, cornerHeight: cr)
+            shapeLayer.path = path
+            return
+        }
 
         if isUShape && h > notchHeight {
             let cr: CGFloat = 12

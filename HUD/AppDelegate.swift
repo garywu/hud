@@ -11,10 +11,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var hoverGlobalMonitor: Any?
     private var hoverLocalMonitor: Any?
     private var hotkeyMonitor: Any?
+    private var globalShortcutMonitor: Any?
+    private var preferencesWindow: NSWindow?
     /// Whether the panel was opened via notch hover (vs status item click)
     private var panelOpenedViaHover = false
     private let hoverMargin: CGFloat = 15
     private let hoverHideDelay: TimeInterval = 0.06
+
+    // MARK: - Status bar size cycle order
+    private let sizeCycle: [StatusBarSize] = [.xs, .small, .medium, .large, .xl]
+    // MARK: - Display mode cycle order
+    private let modeCycle = ["scanner", "lcd", "text"]
+    // MARK: - LCD theme cycle order
+    private let themeCycle = ["red", "green", "amber", "blue"]
+    // MARK: - Focus mode cycle order
+    private let focusCycle: [String?] = [nil, "work", "sleep", "personal"]
+    // MARK: - Mute state
+    private var isMuted = false
 
     private var replaceNotch: Bool {
         get {
@@ -139,6 +152,127 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             else { return }
             DispatchQueue.main.async { self?.togglePanel() }
         }
+
+        // Ctrl+Shift keyboard shortcuts
+        globalShortcutMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            guard flags.contains(.control), flags.contains(.shift) else { return }
+            // Strip ctrl+shift to check no other modifiers (except function which some keyboards add)
+            let extra = flags.subtracting([.control, .shift, .function])
+            guard extra.isEmpty else { return }
+
+            guard let key = event.charactersIgnoringModifiers?.lowercased() else { return }
+            DispatchQueue.main.async {
+                switch key {
+                case "h": self?.toggleHUDVisibility()
+                case "n": self?.cycleNextPlugin()
+                case "p": self?.cyclePreviousPlugin()
+                case "s": self?.cycleStatusBarSize()
+                case "d": self?.cycleDisplayMode()
+                case "t": self?.cycleLCDTheme()
+                case "f": self?.cycleFocusMode()
+                case "m": self?.toggleMute()
+                default: break
+                }
+            }
+        }
+    }
+
+    // MARK: - Keyboard Shortcut Actions
+
+    private func toggleHUDVisibility() {
+        log("Shortcut: toggle HUD visibility")
+        togglePanel()
+    }
+
+    private func cycleNextPlugin() {
+        let registry = PluginRegistry.shared
+        let running = registry.plugins.filter { registry.pluginStates[$0.id]?.isRunning == true }
+        guard running.count > 1, let current = registry.activePlugin else {
+            // If no active or only one, activate first
+            if let first = registry.plugins.first {
+                registry.activePlugin = first.id
+            }
+            return
+        }
+        if let idx = running.firstIndex(where: { $0.id == current }) {
+            let next = (idx + 1) % running.count
+            registry.activePlugin = running[next].id
+        }
+        log("Shortcut: next plugin -> \(registry.activePlugin ?? "none")")
+    }
+
+    private func cyclePreviousPlugin() {
+        let registry = PluginRegistry.shared
+        let running = registry.plugins.filter { registry.pluginStates[$0.id]?.isRunning == true }
+        guard running.count > 1, let current = registry.activePlugin else { return }
+        if let idx = running.firstIndex(where: { $0.id == current }) {
+            let prev = (idx - 1 + running.count) % running.count
+            registry.activePlugin = running[prev].id
+        }
+        log("Shortcut: prev plugin -> \(registry.activePlugin ?? "none")")
+    }
+
+    private func cycleStatusBarSize() {
+        let prefs = HUDPreferences.shared
+        if let idx = sizeCycle.firstIndex(of: prefs.statusBarSize) {
+            prefs.statusBarSize = sizeCycle[(idx + 1) % sizeCycle.count]
+        } else {
+            prefs.statusBarSize = .xs
+        }
+        prefs.save()
+        log("Shortcut: size -> \(prefs.statusBarSize.rawValue)")
+    }
+
+    private func cycleDisplayMode() {
+        let prefs = HUDPreferences.shared
+        if let idx = modeCycle.firstIndex(of: prefs.displayMode) {
+            prefs.displayMode = modeCycle[(idx + 1) % modeCycle.count]
+        } else {
+            prefs.displayMode = "scanner"
+        }
+        prefs.save()
+        log("Shortcut: display mode -> \(prefs.displayMode)")
+    }
+
+    private func cycleLCDTheme() {
+        let prefs = HUDPreferences.shared
+        if let idx = themeCycle.firstIndex(of: prefs.lcdTheme) {
+            prefs.lcdTheme = themeCycle[(idx + 1) % themeCycle.count]
+        } else {
+            prefs.lcdTheme = "red"
+        }
+        prefs.save()
+        log("Shortcut: LCD theme -> \(prefs.lcdTheme)")
+    }
+
+    private func cycleFocusMode() {
+        let fm = FocusManager.shared
+        let currentName = fm.activeProfileName
+        if let idx = focusCycle.firstIndex(of: currentName) {
+            let next = focusCycle[(idx + 1) % focusCycle.count]
+            if let name = next {
+                fm.activate(name)
+            } else {
+                fm.deactivate()
+            }
+        } else {
+            fm.deactivate()
+        }
+        log("Shortcut: focus -> \(fm.activeProfileName ?? "off")")
+    }
+
+    private func toggleMute() {
+        isMuted.toggle()
+        let engine = PolicyEngine.shared
+        if isMuted {
+            // Set all channels to mute
+            engine.channels = [ChannelPolicy(source: "*", policy: "mute", maxInterruptionLevel: "critical", rateLimit: nil)]
+        } else {
+            // Restore to allow-all
+            engine.channels = [ChannelPolicy(source: "*", policy: "allow", maxInterruptionLevel: "critical", rateLimit: nil)]
+        }
+        log("Shortcut: mute -> \(isMuted)")
     }
 
     private func notchHovered() {
@@ -242,8 +376,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showContextMenu() {
         let menu = NSMenu()
 
+        // Current status display
+        let status = StatusWatcher.shared.currentStatus
+        let statusEmoji: String
+        switch status.status {
+        case "green": statusEmoji = "🟢"
+        case "yellow": statusEmoji = "🟡"
+        case "red": statusEmoji = "🔴"
+        default: statusEmoji = "⚪"
+        }
+        let statusItem = NSMenuItem(title: "\(statusEmoji) \(status.source.uppercased()): \(status.message)", action: nil, keyEquivalent: "")
+        statusItem.isEnabled = false
+        menu.addItem(statusItem)
+
+        menu.addItem(.separator())
+
+        // Notch toggle
         let notchItem = NSMenuItem(
-            title: "Show in notch...",
+            title: "Show in Notch",
             action: #selector(toggleReplaceNotch),
             keyEquivalent: ""
         )
@@ -251,8 +401,144 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         notchItem.state = replaceNotch ? .on : .off
         menu.addItem(notchItem)
 
+        // Window mode submenu (auto / notch / floating)
+        let windowModeMenu = NSMenu()
+        let currentWindowMode = StatusWatcher.shared.config.display_mode ?? "auto"
+        for mode in ["auto", "notch", "floating"] {
+            let label: String
+            switch mode {
+            case "auto": label = "Auto (notch if available)"
+            case "notch": label = "Notch Only"
+            case "floating": label = "Floating Panel"
+            default: label = mode.capitalized
+            }
+            let item = NSMenuItem(title: label, action: #selector(selectWindowMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode
+            item.state = (currentWindowMode == mode) ? .on : .off
+            windowModeMenu.addItem(item)
+        }
+        let windowModeItem = NSMenuItem(title: "Window Mode", action: nil, keyEquivalent: "")
+        windowModeItem.submenu = windowModeMenu
+        menu.addItem(windowModeItem)
+
+        // Floating position submenu
+        let floatPosMenu = NSMenu()
+        let currentFloatPos = StatusWatcher.shared.config.floating_position ?? "center"
+        for pos in ["left", "center", "right"] {
+            let item = NSMenuItem(title: pos.capitalized, action: #selector(selectFloatingPosition(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = pos
+            item.state = (currentFloatPos == pos) ? .on : .off
+            floatPosMenu.addItem(item)
+        }
+        let floatPosItem = NSMenuItem(title: "Floating Position", action: nil, keyEquivalent: "")
+        floatPosItem.submenu = floatPosMenu
+        // Only show floating position when in floating mode
+        floatPosItem.isHidden = (StatusWatcher.shared.config.resolvedDisplayMode != "floating")
+        menu.addItem(floatPosItem)
+
         menu.addItem(.separator())
 
+        // Plugin submenu
+        let pluginMenu = NSMenu()
+        let registry = PluginRegistry.shared
+        if registry.plugins.isEmpty {
+            let noneItem = NSMenuItem(title: "No plugins installed", action: nil, keyEquivalent: "")
+            noneItem.isEnabled = false
+            pluginMenu.addItem(noneItem)
+        } else {
+            for plugin in registry.plugins {
+                let item = NSMenuItem(title: plugin.name, action: #selector(activatePlugin(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = plugin.id
+                item.state = (registry.activePlugin == plugin.id) ? .on : .off
+                pluginMenu.addItem(item)
+            }
+        }
+        let pluginItem = NSMenuItem(title: "Plugins", action: nil, keyEquivalent: "")
+        pluginItem.submenu = pluginMenu
+        menu.addItem(pluginItem)
+
+        // Display mode submenu
+        let displayMenu = NSMenu()
+        let prefs = HUDPreferences.shared
+        for mode in modeCycle {
+            let item = NSMenuItem(title: mode.capitalized, action: #selector(selectDisplayMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode
+            item.state = (prefs.displayMode == mode) ? .on : .off
+            displayMenu.addItem(item)
+        }
+        let displayItem = NSMenuItem(title: "Display Mode", action: nil, keyEquivalent: "")
+        displayItem.submenu = displayMenu
+        menu.addItem(displayItem)
+
+        // Size submenu
+        let sizeMenu = NSMenu()
+        let sizeLabels = ["XS", "S", "M", "L", "XL"]
+        for (i, size) in sizeCycle.enumerated() {
+            let item = NSMenuItem(title: sizeLabels[i], action: #selector(selectSize(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = size.rawValue
+            item.state = (prefs.statusBarSize == size) ? .on : .off
+            sizeMenu.addItem(item)
+        }
+        let sizeItem = NSMenuItem(title: "Size", action: nil, keyEquivalent: "")
+        sizeItem.submenu = sizeMenu
+        menu.addItem(sizeItem)
+
+        // Theme submenu
+        let themeMenu = NSMenu()
+        for theme in themeCycle {
+            let item = NSMenuItem(title: theme.capitalized, action: #selector(selectTheme(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = theme
+            item.state = (prefs.lcdTheme == theme) ? .on : .off
+            themeMenu.addItem(item)
+        }
+        let themeItem = NSMenuItem(title: "LCD Theme", action: nil, keyEquivalent: "")
+        themeItem.submenu = themeMenu
+        menu.addItem(themeItem)
+
+        // Focus mode submenu
+        let focusMenu = NSMenu()
+        let fm = FocusManager.shared
+        let offItem = NSMenuItem(title: "Off", action: #selector(selectFocusMode(_:)), keyEquivalent: "")
+        offItem.target = self
+        offItem.representedObject = "" as NSString
+        offItem.state = (fm.activeProfileName == nil) ? .on : .off
+        focusMenu.addItem(offItem)
+        for name in ["work", "sleep", "personal"] {
+            let item = NSMenuItem(title: name.capitalized, action: #selector(selectFocusMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = name as NSString
+            item.state = (fm.activeProfileName == name) ? .on : .off
+            focusMenu.addItem(item)
+        }
+        let focusItem = NSMenuItem(title: "Focus Mode", action: nil, keyEquivalent: "")
+        focusItem.submenu = focusMenu
+        menu.addItem(focusItem)
+
+        // Mute toggle
+        let muteItem = NSMenuItem(
+            title: isMuted ? "Unmute Notifications" : "Mute Notifications",
+            action: #selector(muteMenuAction),
+            keyEquivalent: ""
+        )
+        muteItem.target = self
+        menu.addItem(muteItem)
+
+        menu.addItem(.separator())
+
+        // Preferences
+        let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
+        prefsItem.target = self
+        menu.addItem(prefsItem)
+
+        menu.addItem(.separator())
+
+        // Quit
         let quitItem = NSMenuItem(
             title: "Quit Atlas HUD",
             action: #selector(NSApplication.terminate(_:)),
@@ -260,10 +546,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         menu.addItem(quitItem)
 
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil)
-        statusItem.menu = nil
+        self.statusItem.menu = menu
+        self.statusItem.button?.performClick(nil)
+        self.statusItem.menu = nil
     }
+
+    // MARK: - Context Menu Actions
 
     @objc private func toggleReplaceNotch() {
         replaceNotch = !replaceNotch
@@ -273,6 +561,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             notchWindow?.orderOut(nil)
             notchWindow = nil
         }
+    }
+
+    @objc private func activatePlugin(_ sender: NSMenuItem) {
+        guard let pluginId = sender.representedObject as? String else { return }
+        let registry = PluginRegistry.shared
+        if registry.pluginStates[pluginId]?.isRunning != true {
+            registry.startPlugin(pluginId)
+        }
+        registry.activePlugin = pluginId
+        log("Menu: activated plugin \(pluginId)")
+    }
+
+    @objc private func selectDisplayMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? String else { return }
+        HUDPreferences.shared.displayMode = mode
+        HUDPreferences.shared.save()
+        log("Menu: display mode -> \(mode)")
+    }
+
+    @objc private func selectSize(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let size = StatusBarSize(rawValue: raw) else { return }
+        HUDPreferences.shared.statusBarSize = size
+        HUDPreferences.shared.save()
+        log("Menu: size -> \(raw)")
+    }
+
+    @objc private func selectTheme(_ sender: NSMenuItem) {
+        guard let theme = sender.representedObject as? String else { return }
+        HUDPreferences.shared.lcdTheme = theme
+        HUDPreferences.shared.save()
+        log("Menu: LCD theme -> \(theme)")
+    }
+
+    @objc private func selectFocusMode(_ sender: NSMenuItem) {
+        guard let name = sender.representedObject as? NSString else { return }
+        let fm = FocusManager.shared
+        if name.length == 0 {
+            fm.deactivate()
+        } else {
+            fm.activate(name as String)
+        }
+        log("Menu: focus -> \(fm.activeProfileName ?? "off")")
+    }
+
+    @objc private func muteMenuAction() {
+        toggleMute()
+    }
+
+    @objc private func openPreferences() {
+        if let window = preferencesWindow {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        let prefsView = PreferencesView()
+        let hostingController = NSHostingController(rootView: prefsView)
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Atlas HUD Preferences"
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.setContentSize(NSSize(width: 520, height: 480))
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        preferencesWindow = window
     }
 
     private func showPanelBelowStatusItem() {

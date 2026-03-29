@@ -96,6 +96,11 @@ struct HUDConfig: Codable, Equatable {
     let severity_layouts: [String: SeverityLayout]?
     let avatar: AvatarConfig?
 
+    // Display mode: "auto" | "notch" | "floating"
+    let display_mode: String?
+    // Floating panel position: "center" | "left" | "right"
+    let floating_position: String?
+
     // Legacy fields (for backward compatibility)
     let layout: String?
     let presets: [String: LayoutPreset]?
@@ -163,6 +168,20 @@ struct HUDConfig: Codable, Equatable {
         return severity == "green" || severity != "yellow" && severity != "red"
     }
 
+    /// Resolved display mode: "notch" or "floating"
+    var resolvedDisplayMode: String {
+        let mode = display_mode ?? "auto"
+        if mode == "notch" { return "notch" }
+        if mode == "floating" { return "floating" }
+        // "auto": use notch if detected, else floating
+        return NotchGeometry.screenHasNotch ? "notch" : "floating"
+    }
+
+    /// Resolved floating position
+    var resolvedFloatingPosition: String {
+        floating_position ?? "center"
+    }
+
     static let fallback = HUDConfig(
         collapsed: .defaults,
         auto_minimize: AutoMinimizeConfig(yellow: 300, red: 300, sos: -1),
@@ -172,6 +191,8 @@ struct HUDConfig: Codable, Equatable {
             "red":    SeverityLayout(mode: nil, leftEar: 380, rightEar: 50, bottomStrip: 28),
         ],
         avatar: AvatarConfig(width: 50),
+        display_mode: nil,
+        floating_position: nil,
         layout: nil,
         presets: nil
     )
