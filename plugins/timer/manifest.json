@@ -1,0 +1,18 @@
+{
+  "id": "timer",
+  "name": "Countdown Timer",
+  "description": "General purpose countdown timer with alert on completion",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "continuous",
+    "interval": 1
+  },
+  "config": {}
+}

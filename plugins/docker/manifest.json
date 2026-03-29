@@ -1,0 +1,18 @@
+{
+  "id": "docker",
+  "name": "Docker Status",
+  "description": "Show running Docker containers",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "small",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "continuous",
+    "interval": 30
+  },
+  "config": {}
+}

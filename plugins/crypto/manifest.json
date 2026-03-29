@@ -1,0 +1,18 @@
+{
+  "id": "crypto",
+  "name": "Crypto Ticker",
+  "description": "BTC and ETH prices from CoinGecko",
+  "version": "1.0",
+  "author": "atlas",
+  "display": {
+    "renderer": "lcd",
+    "presentation": "static",
+    "size": "medium",
+    "priority": "passive"
+  },
+  "schedule": {
+    "type": "continuous",
+    "interval": 300
+  },
+  "config": {}
+}
