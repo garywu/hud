@@ -283,12 +283,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showPanelBelowNotch() {
-        guard let screen = NSScreen.builtIn, let panel = panelWindow else { return }
-        let screenFrame = screen.frame
+        guard let panel = panelWindow else { return }
         let panelWidth: CGFloat = 340
-        let x = screenFrame.midX - panelWidth / 2
-        let y = screenFrame.maxY - 50 - 120  // below notch area
-        panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: 120), display: true)
+
+        if let nw = notchWindow, nw.isFloatingMode {
+            // Position below the floating pill
+            let nwFrame = nw.frame
+            let x = nwFrame.midX - panelWidth / 2
+            let y = nwFrame.minY - 120 - 4
+            panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: 120), display: true)
+        } else {
+            guard let screen = NSScreen.builtIn else { return }
+            let screenFrame = screen.frame
+            let x = screenFrame.midX - panelWidth / 2
+            let y = screenFrame.maxY - 50 - 120  // below notch area
+            panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: 120), display: true)
+        }
         panel.orderFrontRegardless()
     }
 
@@ -560,6 +570,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             notchWindow?.orderOut(nil)
             notchWindow = nil
+        }
+    }
+
+    @objc private func selectWindowMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? String else { return }
+        updateHUDConfigField("display_mode", value: mode)
+        log("Menu: window mode -> \(mode)")
+        // Recreate the notch/floating window with new mode
+        if replaceNotch {
+            notchWindow?.orderOut(nil)
+            notchWindow = nil
+            setupNotchWindow()
+        }
+    }
+
+    @objc private func selectFloatingPosition(_ sender: NSMenuItem) {
+        guard let pos = sender.representedObject as? String else { return }
+        updateHUDConfigField("floating_position", value: pos)
+        log("Menu: floating position -> \(pos)")
+        // Reposition if currently in floating mode
+        if notchWindow?.isFloatingMode == true {
+            notchWindow?.orderOut(nil)
+            notchWindow = nil
+            setupNotchWindow()
+        }
+    }
+
+    /// Update a single field in ~/.atlas/hud-config.json (merge-safe)
+    private func updateHUDConfigField(_ key: String, value: String) {
+        let path = NSString("~/.atlas/hud-config.json").expandingTildeInPath
+        var dict: [String: Any] = [:]
+        if let data = FileManager.default.contents(atPath: path),
+           let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            dict = existing
+        }
+        dict[key] = value
+        let dir = (path as NSString).deletingLastPathComponent
+        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        if let data = try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys]) {
+            try? data.write(to: URL(fileURLWithPath: path), options: .atomic)
         }
     }
 

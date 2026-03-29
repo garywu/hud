@@ -647,6 +647,15 @@ class NotchWindow: NSPanel {
         }
     }
 
+    // MARK: - Click to expand (floating mode)
+
+    override func mouseDown(with event: NSEvent) {
+        if isFloatingMode {
+            onHover?()
+        }
+        super.mouseDown(with: event)
+    }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }
