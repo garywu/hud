@@ -1,3 +1,8 @@
+> **Org Status**: 🟢 Active
+> **Cloudflare**: N/A
+> **Last Audited**: 2026-04-28
+---
+
 # Building Jane — A Persistent AI Companion with Voice, Memory, Face, and Local Superpowers
 
 An AI companion that lives in your MacBook notch is not a chatbot. It is a daemon with a face, a voice, a memory that spans months, and root access to your machine. This article is the complete technical blueprint for building one — covering speech recognition, voice synthesis, persistent memory architectures, avatar rendering, always-on daemon design, local automation capabilities, and the competitive landscape of AI companion products. If you are building an ambient AI presence that goes beyond a chat window, this is the reference you need.
